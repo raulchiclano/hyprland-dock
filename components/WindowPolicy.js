@@ -90,3 +90,19 @@ function findWindow(selection, address) {
     if (windows[i].address === address && windows[i].window) return windows[i]
   return null
 }
+
+function indicator(selection) {
+  var windows = selection.local.concat(selection.remote)
+  for (var i = 0; i < windows.length; ++i)
+    if (windows[i].window && windows[i].window.activated) return "active"
+  if (selection.local.length > 1) return "multiple"
+  if (selection.local.length === 1) return "local"
+  return selection.remote.length ? "remote" : "closed"
+}
+
+function windowSummary(name, selection) {
+  var local = selection.local.length, remote = selection.remote.length
+  if (!local && !remote) return name
+  return name + " · " + local + " aquí"
+    + (remote ? " · " + remote + " en otros escritorios" : "")
+}

@@ -20,7 +20,7 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 - Running applications appear after favorites with a subtle separator; one icon per application
 - Pin running applications from their context menu
 - Window chooser grouped by current and other workspaces, with titles and keyboard navigation
-- Running-application indicators
+- Workspace-aware indicators: dim remote dot, local dot(s), and a brighter focused marker
 - Drag-to-reorder with persistent pinned-app order
 - Right-click actions to launch, close, pin, or unpin applications
 - Fuzzy application search for adding dock items
@@ -292,3 +292,22 @@ Normal left clicks and the current-workspace launch policy are unchanged.
 Validation also includes `node tests/window-chooser.cjs` and a live QML check of
 exact window selection, remote workspace activation, 25-window scrolling bounds,
 an empty list and a visual check of the grouped layout and long titles.
+
+### Application indicators
+
+The subtle marker beside each icon reflects the current focused workspace:
+
+- No windows: no marker.
+- Windows only elsewhere: one dim lavender dot.
+- One local window: one lavender dot.
+- Multiple local windows: two lavender dots, regardless of their exact count.
+- Application has focus: a brighter lavender bar, taking priority over the dots.
+
+Markers follow the dock orientation, including vertical docks. Hover text gives
+exact counts, for example **Foot · 2 aquí · 3 en otros escritorios**. Counts follow
+the same workspace and visible pinned-window policy as window selection. The
+hover label uses a non-focusing popup so it can extend past the dock's own bounds
+and slide into view at screen edges. Click actions and window selection are unchanged.
+
+Validation: `node tests/indicators.cjs`, live workspace counts and focus transitions,
+and visual checks of all five states and hover text at a screen edge.

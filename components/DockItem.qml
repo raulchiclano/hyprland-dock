@@ -56,6 +56,10 @@ Item {
   }
   readonly property var windowSelection: WindowPolicy.select(matchingWindows,
     Hyprland.toplevels.values, currentWorkspace, focusedMonitor ? focusedMonitor.id : -1)
+  readonly property string applicationName: entry ? entry.name : runningApplication
+    ? runningApplication.appId || (runningToplevel ? runningToplevel.title : "Aplicación") : desktopId
+  readonly property string indicatorStatus: WindowPolicy.indicator(windowSelection)
+  readonly property string windowSummary: WindowPolicy.windowSummary(applicationName, windowSelection)
   readonly property var localTarget: windowSelection.local.length ? windowSelection.local[0] : null
   readonly property var localWindow: localTarget ? localTarget.window : null
   readonly property var launchPlan: WindowPolicy.launchPlan(entry, matchingWindows.length > 0)
@@ -151,10 +155,9 @@ Item {
       asynchronous: false
     }
 
-    Rectangle {
-      width: 4
-      height: 4
-      radius: 2
+    DockIndicator {
+      status: root.indicatorStatus
+      vertical: root.vertical
       x: root.position === "left"
         ? iconContainer.width + 2
         : root.position === "right"
@@ -165,42 +168,62 @@ Item {
         : root.position === "bottom"
           ? iconContainer.height + 2
           : (iconContainer.height - height) / 2
-      color: root.runningToplevel ? "#B4A1F5" : "transparent"
     }
   }
 
-  Rectangle {
+  PopupWindow {
     id: tooltip
 
-    visible: mouse.hovered && !contextMenu.visible
-    x: root.position === "left"
-      ? iconContainer.x + iconContainer.width + 12
-      : root.position === "right"
-        ? iconContainer.x - width - 12
-        : (root.width - width) / 2
-    y: root.position === "top"
-      ? iconContainer.y + iconContainer.height + 12
-      : root.position === "bottom"
-        ? iconContainer.y - height - 12
-        : (root.height - height) / 2
-    width: tooltipText.implicitWidth + 18
-    height: tooltipText.implicitHeight + 10
-    radius: 8
-    color: DockStyle.panel
-    border.width: 1
-    border.color: DockStyle.border
-    z: 10
+    visible: mouse.hovered && !contextMenu.visible && !dragHandler.active
+    implicitWidth: Math.min(420, Math.ceil(tooltipMetrics.advanceWidth) + 20,
+      anchor.window ? anchor.window.screen.width - 24 : 420)
+    implicitHeight: tooltipText.implicitHeight + 10
+    TextMetrics {
+      id: tooltipMetrics
+      text: root.windowSummary
+      font: tooltipText.font
+    }
+    color: "transparent"
+    grabFocus: false
+    anchor {
+      window: root.QsWindow.window
+      edges: Edges.Top | Edges.Left
+      gravity: Edges.Bottom | Edges.Right
+      adjustment: PopupAdjustment.Slide
+      rect.width: 1
+      rect.height: 1
+      onAnchoring: {
+        if (!tooltip.anchor.window) return
+        var x = (root.width - tooltip.implicitWidth) / 2
+        var y = root.position === "top" ? root.height + 8 : -tooltip.implicitHeight - 8
+        if (root.position === "left" || root.position === "right") {
+          x = root.position === "left" ? root.width + 8 : -tooltip.implicitWidth - 8
+          y = (root.height - tooltip.implicitHeight) / 2
+        }
+        var point = tooltip.anchor.window.contentItem.mapFromItem(root, x, y)
+        tooltip.anchor.rect.x = Math.round(point.x)
+        tooltip.anchor.rect.y = Math.round(point.y)
+      }
+    }
 
-    Text {
-      id: tooltipText
-      anchors.centerIn: parent
-      text: root.entry ? root.entry.name : root.runningApplication
-        ? root.runningApplication.appId || (root.runningToplevel ? root.runningToplevel.title : "Aplicación")
-        : root.desktopId
-      color: DockStyle.text
-      font.family: DockStyle.fontFamily
-      font.pixelSize: 13
-      font.weight: Font.DemiBold
+    Rectangle {
+      anchors.fill: parent
+      radius: 8
+      color: DockStyle.panel
+      border.width: 1
+      border.color: DockStyle.border
+      Text {
+        id: tooltipText
+        anchors.centerIn: parent
+        width: parent.width - 18
+        text: root.windowSummary
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: DockStyle.text
+        font.family: DockStyle.fontFamily
+        font.pixelSize: 13
+        font.weight: Font.DemiBold
+      }
     }
   }
 
@@ -256,8 +279,7 @@ Item {
       ? root.canLaunchHere ? "Nueva ventana aquí" : "Nueva ventana no disponible"
       : "Abrir aquí"
     windowSelection: root.windowSelection
-    applicationName: root.entry ? root.entry.name : root.runningApplication
-      ? root.runningApplication.appId || "Aplicación" : root.desktopId
+    applicationName: root.applicationName
     canClose: root.localWindow !== null
     onWindowChosen: address => root.focusWindow(WindowPolicy.findWindow(root.windowSelection, address))
     autoHide: root.autoHide
