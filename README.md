@@ -4,7 +4,7 @@
 >
 > This fork includes intelligent hiding, the lavender desktop appearance, and synchronous icon loading as a workaround for an observed Qt 6.11.2 image-loader crash. The workaround passed local startup checks; it is not a claim that every Qt crash is resolved.
 >
-> Installation and updates use this fork. Desktop-wide customization is maintained separately in [raulchiclano/omarchy](https://github.com/raulchiclano/omarchy). Integration with that installer is still pending.
+> Installation and updates use this fork. Desktop-wide customization is maintained separately in [raulchiclano/omarchy](https://github.com/raulchiclano/omarchy). That installer includes a pinned revision of this fork by default, with the lavender preset, backups and autostart. See its [dock guide](https://github.com/raulchiclano/omarchy/blob/main/docs/dock.md).
 
 
 A lightweight macOS-inspired application dock for Hyprland, built with Quickshell and Qt/QML.
