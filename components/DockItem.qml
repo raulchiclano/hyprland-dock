@@ -1,6 +1,8 @@
 import QtQuick
 import "DockStyle.js" as DockStyle
 import "Applications.js" as Applications
+import "WindowPolicy.js" as WindowPolicy
+import Quickshell.Hyprland
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -39,16 +41,26 @@ Item {
     return runningApplication ? runningApplication.entry : desktopId ? DesktopEntries.byId(desktopId) : null
   }
   readonly property var toplevels: ToplevelManager.toplevels.values || []
-  readonly property var runningToplevel: {
-    var modelRevision = toplevels.length
-    if (runningApplication) {
-      var windows = runningApplication.windows
-      for (var i = 0; i < windows.length; ++i)
-        if (windows[i]) return windows[i]
-      return null
-    }
-    return findRunningToplevel()
+  readonly property var matchingWindows: {
+    if (runningApplication) return runningApplication.windows.filter(w => w && toplevels.indexOf(w) >= 0)
+    return toplevels.filter(w => Applications.score(w, desktopId, entry) > 0)
   }
+  readonly property var runningToplevel: matchingWindows.length ? matchingWindows[0] : null
+  // Use the workspace the user is working in, including an open scratchpad.
+  readonly property var focusedMonitor: Hyprland.focusedMonitor
+  readonly property int currentWorkspace: {
+    if (!focusedMonitor) return 0
+    var special = focusedMonitor.lastIpcObject.specialWorkspace
+    return special && special.id ? special.id
+      : Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 0
+  }
+  readonly property var windowSelection: WindowPolicy.select(matchingWindows,
+    Hyprland.toplevels.values, currentWorkspace, focusedMonitor ? focusedMonitor.id : -1)
+  readonly property var localTarget: windowSelection.local.length ? windowSelection.local[0] : null
+  readonly property var localWindow: localTarget ? localTarget.window : null
+  readonly property var remoteWindow: windowSelection.remote.length ? windowSelection.remote[0] : null
+  readonly property var launchPlan: WindowPolicy.launchPlan(entry, matchingWindows.length > 0)
+  readonly property bool canLaunchHere: currentWorkspace !== 0 && launchPlan.kind !== "blocked"
   readonly property real dragOffset: dragHandler.active
     ? vertical ? dragHandler.activeTranslation.y : dragHandler.activeTranslation.x
     : 0
@@ -60,31 +72,32 @@ Item {
     : Math.exp(-(distance * distance) / (magnificationRadius * magnificationRadius))
   readonly property real iconScale: 1 + (magnification - 1) * influence
 
-  function findRunningToplevel() {
-    for (var i = 0; i < toplevels.length; ++i) {
-      if (Applications.score(toplevels[i], desktopId, entry)) return toplevels[i]
+  function launch() {
+    if (!canLaunchHere) {
+      contextMenu.open()
+      return
     }
-    return null
+    if (launchPlan.kind === "action") launchPlan.action.execute()
+    else if (entry) entry.execute()
   }
 
-  function launch() {
-    if (entry)
-      entry.execute()
-    else if (isPinned && desktopId)
-      Quickshell.execDetached(["gtk-launch", desktopId + ".desktop"])
+  function focusWindow(target) {
+    if (!target) return
+    var request = WindowPolicy.focusRequest(target.address, Hyprland.usingLua)
+    if (request) Hyprland.dispatch(request)
   }
 
   function activateOrLaunch() {
-    if ((!isPinned || clickAction === "focus-or-launch") && runningToplevel) {
-      runningToplevel.activate()
-      return
-    }
-    launch()
+    var action = WindowPolicy.intent(windowSelection.local.length,
+      canLaunchHere, isPinned && clickAction !== "focus-or-launch")
+    if (action === "focus") focusWindow(localTarget)
+    else if (action === "launch") launch()
+    else contextMenu.open()
   }
 
   function closeRunning() {
-    if (runningToplevel)
-      runningToplevel.close()
+    // Never close a hidden window on another workspace from this action.
+    if (localWindow) localWindow.close()
   }
 
   width: vertical ? slotSize + 6 : slotSize
@@ -239,8 +252,15 @@ Item {
     position: root.position
     isPinned: root.isPinned
     canPin: root.entry !== null && !root.entry.noDisplay
-    canLaunch: root.entry !== null || (root.isPinned && root.desktopId.length > 0)
-    canClose: root.runningToplevel !== null
+    canLaunch: root.canLaunchHere
+    launchText: root.runningToplevel
+      ? root.canLaunchHere ? "Nueva ventana aquí" : "Nueva ventana no disponible"
+      : "Abrir aquí"
+    remoteText: root.remoteWindow ? "Ir a ventana · "
+      + (root.remoteWindow.workspaceId < 0 ? root.remoteWindow.workspaceName
+        : "Escritorio " + root.remoteWindow.workspaceName) : ""
+    canClose: root.localWindow !== null
+    onActivateElsewhere: root.focusWindow(root.remoteWindow)
     autoHide: root.autoHide
     onVisibleChanged: root.contextMenuVisibilityChanged(visible)
     onOpenNewWindow: root.launch()

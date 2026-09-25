@@ -44,6 +44,24 @@ Item {
     }
   }
 
+  // Keep focus history and special-workspace metadata fresh even without auto-hide.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (["activewindowv2", "workspacev2", "focusedmon", "activespecial",
+           "openwindow", "closewindow", "movewindowv2", "pin"].indexOf(event.name) >= 0)
+        windowRefresh.restart()
+    }
+  }
+  Timer {
+    id: windowRefresh
+    interval: 40
+    onTriggered: {
+      Hyprland.refreshMonitors()
+      Hyprland.refreshToplevels()
+    }
+  }
+
   function loadSettings(raw) {
     try {
       var parsed = JSON.parse(raw)

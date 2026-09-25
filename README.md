@@ -16,7 +16,7 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 - Spanish lavender menus, application picker and tooltips using Adwaita Sans
 - Smooth pointer-distance magnification
 - Freedesktop application icons and launching
-- Focuses an existing application on another workspace
+- Workspace-aware clicks: focus the last-used local window or open a new one here
 - Running applications appear after favorites with a subtle separator; one icon per application
 - Pin running applications from their context menu
 - Running-application indicators
@@ -170,7 +170,7 @@ Installed copies use `~/.config/hyprland-dock/dock.json`. When running from the 
 | `fullLength` | Fill the screen width, or height for a vertical dock |
 | `reserveSpace` | When `true`, tiled windows stop beside the dock |
 | `autoHide` | Hide the dock until the pointer reaches its screen edge; can also be toggled from the right-click menu |
-| `clickAction` | `focus-or-launch` focuses an existing window; `launch` always starts a new instance |
+| `clickAction` | `focus-or-launch` focuses the last-used window in the current workspace, or opens one here; `launch` requests a new window. Unsupported requests show the menu instead of activating a window elsewhere. |
 | `pinned` | Ordered desktop-entry IDs displayed in the dock |
 
 Pinned values are desktop-entry filenames without the `.desktop` suffix. List available IDs with:
@@ -237,6 +237,36 @@ Run `node tests/overlap.cjs` to check overlap detection for visible, hidden, pin
 
 Open windows from all workspaces appear after the pinned favorites. Multiple windows of the same recognized application share one temporary icon, which disappears after its last window closes. Pinned applications are never duplicated. Use **Fijar en el dock** on a temporary icon to keep it; unfixed running apps remain visible until closed. Only favorites can be reordered by dragging.
 
-Applications are matched by desktop entry ID, startup class and the existing web-app identifier matching. Unrecognized applications can still be focused and closed, but use a generic icon and cannot be pinned until a valid desktop launcher is available. Background processes without windows are not included. This change does not add a window chooser; clicking still focuses one window.
+Applications are matched by desktop entry ID, startup class and the existing web-app identifier matching. Unrecognized applications can still be focused and closed, but use a generic icon and cannot be pinned until a valid desktop launcher is available. Background processes without windows are not included. This change does not add a window chooser; clicking focuses the last-used local window.
 
 Run `node tests/applications.cjs` to check grouping, matching, pin/unpin transitions and applications without launchers.
+
+### Workspace-aware clicks
+
+The current workspace is the focused workspace (or its open special workspace).
+Applications remain grouped globally, but a normal click never selects a window
+from another workspace implicitly:
+
+- If local windows exist, focus the most recently used one. Pinned windows visible
+  on the focused monitor count as local. Window identities come from Hyprland's
+  Wayland handles, not window titles.
+- Otherwise request a new window using the desktop entry's `new-window` or
+  `new-empty-window` action. Zen uses `new-blank-window`; Foot launches a new terminal.
+- A running app with no known new-window action opens the menu. This includes
+  singleton apps such as Spotify and unverified launchers: ordinary execution can
+  activate their existing window on another workspace, so it is not used here.
+- The menu offers **Nueva ventana aquí** when supported and **Ir a ventana ·
+  Escritorio N** for the most recently used window elsewhere. The latter is an
+  explicit workspace switch; a full window chooser is not included yet.
+- **Cerrar ventana aquí** only closes the last-used local window.
+
+The new-window action is supplied by each application; application-specific
+workspace rules can still override where a newly created window is placed.
+The current implementation uses the focused workspace on multi-monitor systems,
+not necessarily the monitor containing the dock that was clicked.
+
+Validation: `node tests/window-policy.cjs`, `node tests/applications.cjs` and
+`node tests/overlap.cjs`. Local integration checks covered new Foot windows with
+existing remote terminals, local focus history, Spotify without an implicit
+workspace switch, and two new windows each for Zen, Nautilus and VS Code on an
+empty workspace. Only test-created windows were closed afterward.

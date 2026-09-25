@@ -12,6 +12,9 @@ PopupWindow {
   property bool isPinned: true
   property bool canPin: true
   property bool canLaunch: true
+  property string launchText: "Abrir aquí"
+  property string remoteText: ""
+  signal activateElsewhere()
   signal pinToDock()
   signal openNewWindow()
   signal closeWindow()
@@ -114,7 +117,7 @@ PopupWindow {
 
       DockMenuAction {
         width: menuColumn.width
-        text: "Abrir aplicación"
+        text: root.launchText
         enabled: root.canLaunch
         onTriggered: {
           root.visible = false
@@ -124,7 +127,17 @@ PopupWindow {
 
       DockMenuAction {
         width: menuColumn.width
-        text: "Cerrar ventana"
+        visible: root.remoteText.length > 0
+        text: root.remoteText
+        onTriggered: {
+          root.visible = false
+          root.activateElsewhere()
+        }
+      }
+
+      DockMenuAction {
+        width: menuColumn.width
+        text: "Cerrar ventana aquí"
         enabled: root.canClose
         onTriggered: {
           root.visible = false
