@@ -1,4 +1,5 @@
 import QtQuick
+import "DockStyle.js" as DockStyle
 import Quickshell
 
 PopupWindow {
@@ -18,8 +19,8 @@ PopupWindow {
     visible = true
   }
 
-  implicitWidth: 180
-  implicitHeight: 212
+  implicitWidth: 268
+  implicitHeight: menuColumn.implicitHeight + 20
   color: "transparent"
   grabFocus: true
 
@@ -46,12 +47,8 @@ PopupWindow {
         y = root.anchorItem.height / 2 - root.implicitHeight / 2
       }
 
+      // The compositor slides the popup at screen edges; the dock is much smaller than the screen.
       var point = root.anchor.window.contentItem.mapFromItem(root.anchorItem, x, y)
-      if (root.position === "top" || root.position === "bottom")
-        point.x = Math.max(8, Math.min(point.x, root.anchor.window.width - root.implicitWidth - 8))
-      else
-        point.y = Math.max(8, Math.min(point.y, root.anchor.window.height - root.implicitHeight - 8))
-
       root.anchor.rect.x = Math.round(point.x)
       root.anchor.rect.y = Math.round(point.y)
     }
@@ -59,16 +56,20 @@ PopupWindow {
 
   Rectangle {
     anchors.fill: parent
-    radius: 12
-    color: Qt.rgba(0.08, 0.09, 0.11, 0.97)
+    radius: DockStyle.radius
+    color: DockStyle.panel
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.18)
+    border.color: DockStyle.border
 
     Column {
+      id: menuColumn
       anchors.centerIn: parent
+      width: parent.width - 20
+      spacing: 2
 
       DockMenuAction {
-        text: "Add Application"
+        width: menuColumn.width
+        text: "Añadir aplicación…"
         onTriggered: {
           root.visible = false
           root.addApplication()
@@ -76,7 +77,8 @@ PopupWindow {
       }
 
       DockMenuAction {
-        text: "Remove from Dock"
+        width: menuColumn.width
+        text: "Desfijar del dock"
         onTriggered: {
           root.visible = false
           root.removeFromDock()
@@ -84,7 +86,8 @@ PopupWindow {
       }
 
       DockMenuAction {
-        text: root.autoHide ? "Disable Auto-Hide" : "Enable Auto-Hide"
+        width: menuColumn.width
+        text: root.autoHide ? "Mantener siempre visible" : "Activar ocultación automática"
         onTriggered: {
           root.toggleAutoHide()
           root.visible = false
@@ -92,19 +95,20 @@ PopupWindow {
       }
 
       Item {
-        width: 168
+        width: menuColumn.width
         height: 10
 
         Rectangle {
           anchors.centerIn: parent
-          width: 144
+          width: parent.width - 20
           height: 1
-          color: Qt.rgba(1, 1, 1, 0.16)
+          color: DockStyle.separator
         }
       }
 
       DockMenuAction {
-        text: "Open New Window"
+        width: menuColumn.width
+        text: "Abrir aplicación"
         onTriggered: {
           root.visible = false
           root.openNewWindow()
@@ -112,7 +116,8 @@ PopupWindow {
       }
 
       DockMenuAction {
-        text: "Close"
+        width: menuColumn.width
+        text: "Cerrar ventana"
         enabled: root.canClose
         onTriggered: {
           root.visible = false

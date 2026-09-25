@@ -1,4 +1,5 @@
 import QtQuick
+import "DockStyle.js" as DockStyle
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -202,17 +203,19 @@ Item {
     width: tooltipText.implicitWidth + 18
     height: tooltipText.implicitHeight + 10
     radius: 8
-    color: Qt.rgba(0.08, 0.09, 0.11, 0.96)
+    color: DockStyle.panel
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.16)
+    border.color: DockStyle.border
     z: 10
 
     Text {
       id: tooltipText
       anchors.centerIn: parent
       text: root.entry ? root.entry.name : root.desktopId
-      color: "#f5f5f5"
+      color: DockStyle.text
+      font.family: DockStyle.fontFamily
       font.pixelSize: 13
+      font.weight: Font.DemiBold
     }
   }
 

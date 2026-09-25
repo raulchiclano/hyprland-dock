@@ -13,6 +13,7 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 
 ## Features
 
+- Spanish lavender menus, application picker and tooltips using Adwaita Sans
 - Smooth pointer-distance magnification
 - Freedesktop application icons and launching
 - Focuses an existing application on another workspace

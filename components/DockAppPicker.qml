@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import "DockStyle.js" as DockStyle
 import Quickshell
 import Quickshell.Widgets
 
@@ -100,9 +101,8 @@ PopupWindow {
         y = root.anchorItem.height / 2 - root.implicitHeight / 2
       }
 
+      // The compositor slides the popup at screen edges; the dock is much smaller than the screen.
       var point = root.anchor.window.contentItem.mapFromItem(root.anchorItem, x, y)
-      point.x = Math.max(8, Math.min(point.x, root.anchor.window.width - root.implicitWidth - 8))
-      point.y = Math.max(8, Math.min(point.y, root.anchor.window.height - root.implicitHeight - 8))
       root.anchor.rect.x = Math.round(point.x)
       root.anchor.rect.y = Math.round(point.y)
     }
@@ -110,27 +110,40 @@ PopupWindow {
 
   Rectangle {
     anchors.fill: parent
-    radius: 14
-    color: Qt.rgba(0.08, 0.09, 0.11, 0.98)
+    radius: DockStyle.radius
+    color: DockStyle.panel
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.18)
+    border.color: DockStyle.border
+
+    Text {
+      id: heading
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.topMargin: 16
+      anchors.leftMargin: 16
+      text: "Añadir al dock"
+      color: DockStyle.text
+      font.family: DockStyle.fontFamily
+      font.pixelSize: 16
+      font.weight: Font.DemiBold
+    }
 
     Rectangle {
       id: searchField
 
       anchors {
-        top: parent.top
+        top: heading.bottom
         left: parent.left
         right: parent.right
         margins: 12
       }
       height: 42
       radius: 9
-      color: Qt.rgba(1, 1, 1, 0.08)
+      color: DockStyle.field
       border.width: 1
       border.color: searchInput.activeFocus
-        ? Qt.rgba(1, 1, 1, 0.34)
-        : Qt.rgba(1, 1, 1, 0.12)
+        ? DockStyle.accent
+        : DockStyle.border
 
       Text {
         anchors {
@@ -139,8 +152,9 @@ PopupWindow {
           leftMargin: 12
         }
         visible: !searchInput.text
-        text: "Search applications..."
-        color: Qt.rgba(1, 1, 1, 0.46)
+        text: "Buscar aplicaciones…"
+        color: DockStyle.muted
+        font.family: DockStyle.fontFamily
         font.pixelSize: 14
       }
 
@@ -153,9 +167,10 @@ PopupWindow {
           rightMargin: 12
         }
         verticalAlignment: TextInput.AlignVCenter
-        color: "#f5f5f5"
-        selectionColor: Qt.rgba(1, 1, 1, 0.25)
-        selectedTextColor: "#ffffff"
+        color: DockStyle.text
+        selectionColor: DockStyle.selection
+        selectedTextColor: DockStyle.text
+        font.family: DockStyle.fontFamily
         font.pixelSize: 14
         clip: true
 
@@ -203,10 +218,10 @@ PopupWindow {
         required property int index
 
         width: applicationList.width
-        height: 52
+        height: 48
         radius: 9
         color: applicationList.currentIndex === index
-          ? Qt.rgba(1, 1, 1, 0.10)
+          ? DockStyle.selection
           : "transparent"
 
         IconImage {
@@ -236,16 +251,10 @@ PopupWindow {
           Text {
             width: parent.width
             text: applicationRow.modelData.name || applicationRow.modelData.id
-            color: "#f5f5f5"
+            color: DockStyle.text
+            font.family: DockStyle.fontFamily
             font.pixelSize: 14
-            elide: Text.ElideRight
-          }
-
-          Text {
-            width: parent.width
-            text: applicationRow.modelData.id
-            color: Qt.rgba(1, 1, 1, 0.48)
-            font.pixelSize: 11
+            font.weight: Font.DemiBold
             elide: Text.ElideRight
           }
         }
@@ -267,8 +276,9 @@ PopupWindow {
       Text {
         anchors.centerIn: parent
         visible: applicationList.count === 0
-        text: "No matching applications"
-        color: Qt.rgba(1, 1, 1, 0.52)
+        text: "No hay aplicaciones disponibles"
+        color: DockStyle.muted
+        font.family: DockStyle.fontFamily
         font.pixelSize: 13
       }
     }
