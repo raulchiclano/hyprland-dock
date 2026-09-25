@@ -165,7 +165,7 @@ PanelWindow {
       : root.position === "top" ? root.edgeMargin : parent.height - height - root.edgeMargin
     width: root.vertical ? root.iconSize + 24 : parent.width
     height: root.vertical ? parent.height : root.iconSize + 24
-    radius: 20
+    radius: 14
     color: Qt.rgba(0.129, 0.118, 0.173, root.backgroundOpacity)
     border.width: 1
     border.color: Qt.rgba(0.706, 0.631, 0.961, 0.25)
