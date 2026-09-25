@@ -22,6 +22,7 @@ Item {
     reserveSpace: false,
     autoHide: true,
     intelligentHide: true,
+    showLauncher: true,
     clickAction: "focus-or-launch",
     pinned: [
       "org.gnome.Nautilus",

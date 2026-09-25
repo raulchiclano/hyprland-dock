@@ -8,6 +8,7 @@
   "fullLength": false,
   "reserveSpace": false,
   "autoHide": true,
+  "showLauncher": true,
   "clickAction": "focus-or-launch",
   "pinned": [
     "org.gnome.Nautilus",

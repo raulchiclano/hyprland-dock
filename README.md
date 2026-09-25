@@ -14,6 +14,7 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 ## Features
 
 - Spanish lavender menus, application picker and tooltips using Adwaita Sans
+- Fixed nine-dot Applications button opening the existing Omarchy app menu
 - Smooth pointer-distance magnification
 - Freedesktop application icons and launching
 - Workspace-aware clicks: focus the last-used local window or open a new one here
@@ -172,6 +173,7 @@ Installed copies use `~/.config/hyprland-dock/dock.json`. When running from the 
 | `reserveSpace` | When `true`, tiled windows stop beside the dock |
 | `autoHide` | Hide the dock until the pointer reaches its screen edge; can also be toggled from the right-click menu |
 | `clickAction` | `focus-or-launch` focuses the last-used window in the current workspace, or opens one here; `launch` requests a new window. Unsupported requests show the menu instead of activating a window elsewhere. |
+| `showLauncher` | Show a fixed nine-dot Applications button before the favorites (default `true`). Uses `omarchy menu toggle apps`; set to `false` outside Omarchy. It stays the same size on hover, cannot be dragged or unpinned and has no running indicator. |
 | `pinned` | Ordered desktop-entry IDs displayed in the dock |
 
 Pinned values are desktop-entry filenames without the `.desktop` suffix. List available IDs with:

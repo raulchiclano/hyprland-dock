@@ -62,6 +62,8 @@ PanelWindow {
   readonly property var applications: DesktopEntries.applications.values || []
   readonly property var toplevels: ToplevelManager.toplevels.values || []
   readonly property var runningApplications: Applications.unpinned(pinned, applications, toplevels)
+  readonly property bool showLauncher: settings.showLauncher !== false
+  readonly property int launcherExtent: showLauncher ? itemSize + 14 : 0
   readonly property int itemSize: iconSize + 14
   readonly property int reservedSize: iconSize + 24 + edgeMargin
   readonly property int mainPadding: 10
@@ -87,7 +89,7 @@ PanelWindow {
   }
 
   function updateDragTarget(position) {
-    dragTarget = Math.max(0, Math.min(pinned.length - 1, Math.floor(position / itemSize)))
+    dragTarget = Math.max(0, Math.min(pinned.length - 1, Math.floor((position - launcherExtent) / itemSize)))
   }
 
   function finishDrag() {
@@ -213,8 +215,29 @@ PanelWindow {
 
       // Keep one spare cell so a settings reload cannot transiently reduce the
       // grid capacity before the repeater updates its delegates.
-      columns: root.vertical ? 1 : Math.max(1, root.pinned.length + root.runningApplications.length + 2)
-      rows: root.vertical ? Math.max(1, root.pinned.length + root.runningApplications.length + 2) : 1
+      columns: root.vertical ? 1 : Math.max(1, root.pinned.length + root.runningApplications.length + 4)
+      // Derive rows from columns to avoid a transient 1×1 grid on orientation changes.
+
+      DockLauncher {
+        visible: root.showLauncher
+        slotSize: root.itemSize
+        iconSize: root.iconSize
+        position: root.position
+        vertical: root.vertical
+      }
+
+      Item {
+        visible: root.showLauncher && (root.pinned.length > 0 || root.runningApplications.length > 0)
+        width: root.vertical ? root.itemSize + 6 : 14
+        height: root.vertical ? 14 : root.itemSize + 6
+        Rectangle {
+          anchors.centerIn: parent
+          width: root.vertical ? root.iconSize * 0.65 : 1
+          height: root.vertical ? 1 : root.iconSize * 0.65
+          color: DockStyle.accent
+          opacity: 0.28
+        }
+      }
 
       Repeater {
         model: root.pinned
