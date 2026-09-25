@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import "components"
 
 Item {
@@ -18,18 +19,30 @@ Item {
     backgroundOpacity: 0.88,
     position: "bottom",
     fullLength: false,
-    reserveSpace: true,
-    autoHide: false,
+    reserveSpace: false,
+    autoHide: true,
+    intelligentHide: true,
     clickAction: "focus-or-launch",
     pinned: [
       "org.gnome.Nautilus",
-      "com.mitchellh.ghostty",
-      "com.google.Chrome",
+      "zen",
+      "foot",
       "code",
-      "obsidian",
-      "chatgpt"
+      "WhatsApp"
     ]
   })
+
+  // Refresh geometry without spawning processes; Hyprland does not emit every drag step.
+  Timer {
+    interval: 500
+    running: root.settings.autoHide === true && root.settings.intelligentHide === true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      Hyprland.refreshMonitors()
+      Hyprland.refreshToplevels()
+    }
+  }
 
   function loadSettings(raw) {
     try {

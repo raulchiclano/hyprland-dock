@@ -163,7 +163,8 @@ Item {
       source: root.entry && root.entry.icon
         ? Quickshell.iconPath(root.entry.icon, true)
         : Quickshell.iconPath("application-x-executable", true)
-      asynchronous: true
+      // Avoid Qt icon pixmap loading on the background image thread.
+      asynchronous: false
     }
 
     Rectangle {
@@ -180,7 +181,7 @@ Item {
         : root.position === "bottom"
           ? iconContainer.height + 2
           : (iconContainer.height - height) / 2
-      color: root.runningToplevel ? "#f5f5f5" : "transparent"
+      color: root.runningToplevel ? "#B4A1F5" : "transparent"
     }
   }
 

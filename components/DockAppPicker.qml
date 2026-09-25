@@ -220,7 +220,8 @@ PopupWindow {
           source: applicationRow.modelData.icon
             ? Quickshell.iconPath(applicationRow.modelData.icon, true)
             : Quickshell.iconPath("application-x-executable", true)
-          asynchronous: true
+          // Avoid Qt icon pixmap loading on the background image thread.
+          asynchronous: false
         }
 
         Column {

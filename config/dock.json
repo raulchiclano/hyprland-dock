@@ -6,15 +6,15 @@
   "backgroundOpacity": 0.88,
   "position": "bottom",
   "fullLength": false,
-  "reserveSpace": true,
-  "autoHide": false,
+  "reserveSpace": false,
+  "autoHide": true,
   "clickAction": "focus-or-launch",
   "pinned": [
     "org.gnome.Nautilus",
-    "com.google.Chrome",
-    "com.mitchellh.ghostty",
+    "zen",
+    "foot",
     "code",
-    "obsidian",
-    "chatgpt"
-  ]
+    "WhatsApp"
+  ],
+  "intelligentHide": true
 }

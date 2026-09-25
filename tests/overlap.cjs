@@ -1,0 +1,16 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const context = vm.createContext({});
+vm.runInContext(fs.readFileSync(__dirname + '/../components/Overlap.js', 'utf8'), context);
+const rect = context.dockRect(0, 0, 1920, 1080, 300, 109, 66, 10, 'bottom');
+assert.deepEqual(Array.from(rect), [810, 1004, 300, 66]);
+const client = {mapped:true,hidden:false,at:[800,900],size:[400,180],workspace:{id:1}};
+assert.equal(context.occludes(client, rect, [1]), true);
+assert.equal(context.occludes({...client,hidden:true}, rect, [1]), false);
+assert.equal(context.occludes({...client,mapped:false}, rect, [1]), false);
+assert.equal(context.occludes(client, rect, [2]), false);
+assert.equal(context.occludes({...client,pinned:true}, rect, [2]), true);
+assert.equal(context.occludes({...client,at:[0,0],size:[810,1004]}, rect, [1]), false);
+assert.equal(context.occludes({...client,workspace:{id:-99}}, rect, [1,-99]), true);
+console.log('8 overlap checks passed');

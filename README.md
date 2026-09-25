@@ -1,5 +1,12 @@
 # Hyprland Dock
 
+> Personal fork maintained by Raúl, based on [Nick Friedrich's Hyprland Dock](https://github.com/nick-friedrich/hyprland-dock). Original attribution and MIT license are preserved.
+>
+> This fork includes intelligent hiding, the lavender desktop appearance, and synchronous icon loading as a workaround for an observed Qt 6.11.2 image-loader crash. The workaround passed local startup checks; it is not a claim that every Qt crash is resolved.
+>
+> Installation and updates use this fork. Desktop-wide customization is maintained separately in [raulchiclano/omarchy](https://github.com/raulchiclano/omarchy). Integration with that installer is still pending.
+
+
 A lightweight macOS-inspired application dock for Hyprland, built with Quickshell and Qt/QML.
 
 ![Hyprland Dock running at the bottom of a Hyprland desktop](preview_2.png)
@@ -32,13 +39,13 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 Make sure Quickshell is installed, then run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nick-friedrich/hyprland-dock/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/raulchiclano/hyprland-dock/master/install.sh | bash
 ```
 
 The installer uses only user directories, requires no `sudo`, and creates an XDG autostart entry. To install without autostart:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nick-friedrich/hyprland-dock/master/install.sh | bash -s -- --no-autostart
+curl -fsSL https://raw.githubusercontent.com/raulchiclano/hyprland-dock/master/install.sh | bash -s -- --no-autostart
 ```
 
 Run the dock immediately with:
@@ -93,7 +100,7 @@ hyprland-dock stop
 Then install and enable the plugin:
 
 ```bash
-omarchy plugin add https://github.com/nick-friedrich/hyprland-dock.git --enable
+omarchy plugin add https://github.com/raulchiclano/hyprland-dock.git --enable
 ```
 
 The plugin uses the same `~/.config/hyprland-dock/dock.json` configuration as the standalone version. On a plugin-only installation, create it from the bundled defaults:
@@ -214,3 +221,11 @@ This disables cursor warping for all workspace changes, not only dock clicks.
 [MIT](LICENSE)
 
 
+
+## Intelligent hiding
+
+Set `autoHide: true` and `intelligentHide: true` to keep the dock visible unless a visible window overlaps its background. Hidden windows and inactive workspaces are ignored; pinned windows and visible special workspaces are included. Pointer reveal and menus still work. Geometry refreshes every 500 ms via Quickshell IPC, without external processes. Set `intelligentHide: false` for the original edge-only behavior.
+
+## Local checks
+
+Run `node tests/overlap.cjs` to check overlap detection for visible, hidden, pinned and special-workspace windows. The runtime and QML checks are listed in `AGENTS.md`.

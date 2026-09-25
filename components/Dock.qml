@@ -3,6 +3,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
+import "Overlap.js" as Overlap
 
 PanelWindow {
   id: root
@@ -30,6 +32,23 @@ PanelWindow {
   }
   readonly property bool reserveSpace: settings.reserveSpace === undefined ? true : settings.reserveSpace
   readonly property bool autoHide: settings.autoHide === undefined ? false : settings.autoHide
+  readonly property bool intelligentHide: settings.intelligentHide === true
+  readonly property var hyprMonitor: Hyprland.monitorFor(screen)
+  readonly property bool windowOverlaps: {
+    if (!hyprMonitor || !screen) return false
+    var visibleWorkspaces = []
+    for (var monitor of Hyprland.monitors.values) {
+      if (monitor.activeWorkspace) visibleWorkspaces.push(monitor.activeWorkspace.id)
+      var special = monitor.lastIpcObject.specialWorkspace
+      if (special && special.id) visibleWorkspaces.push(special.id)
+    }
+    var rectangle = Overlap.dockRect(hyprMonitor.x, hyprMonitor.y,
+      screen.width, screen.height, width, height, iconSize + 24, edgeMargin, position)
+    for (var window of Hyprland.toplevels.values) {
+      if (Overlap.occludes(window.lastIpcObject, rectangle, visibleWorkspaces)) return true
+    }
+    return false
+  }
   readonly property string clickAction: settings.clickAction || "focus-or-launch"
   readonly property string requestedPosition: settings.position || "bottom"
   readonly property string position: ["top", "bottom", "left", "right"].indexOf(requestedPosition) >= 0
@@ -47,7 +66,7 @@ PanelWindow {
     : Math.ceil(iconSize * magnification + 48) + edgeMargin
   readonly property bool keepAutoHideOpen: windowPointer.hovered
     || appPicker.visible || openMenuCount > 0 || dragSource >= 0
-  readonly property bool dockShown: !autoHide || autoHideRevealed
+  readonly property bool dockShown: !autoHide || (intelligentHide && !windowOverlaps) || autoHideRevealed
   readonly property real pointerPosition: !pointer.hovered
     ? -10000
     : vertical
@@ -147,9 +166,9 @@ PanelWindow {
     width: root.vertical ? root.iconSize + 24 : parent.width
     height: root.vertical ? parent.height : root.iconSize + 24
     radius: 20
-    color: Qt.rgba(0.08, 0.09, 0.11, root.backgroundOpacity)
+    color: Qt.rgba(0.129, 0.118, 0.173, root.backgroundOpacity)
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.18)
+    border.color: Qt.rgba(0.706, 0.631, 0.961, 0.25)
     transform: Translate {
       x: !root.autoHide || root.dockShown
         ? 0
