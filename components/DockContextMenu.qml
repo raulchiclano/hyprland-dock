@@ -13,8 +13,11 @@ PopupWindow {
   property bool canPin: true
   property bool canLaunch: true
   property string launchText: "Abrir aquí"
-  property string remoteText: ""
-  signal activateElsewhere()
+  property var windowSelection: ({local: [], remote: []})
+  property string applicationName: "Ventanas"
+  property bool showingWindows: false
+  readonly property int windowCount: windowSelection.local.length + windowSelection.remote.length
+  signal windowChosen(string address)
   signal pinToDock()
   signal openNewWindow()
   signal closeWindow()
@@ -23,11 +26,13 @@ PopupWindow {
   signal toggleAutoHide()
 
   function open() {
+    showingWindows = false
     visible = true
   }
 
-  implicitWidth: 268
-  implicitHeight: menuColumn.implicitHeight + 20
+  onVisibleChanged: if (!visible) showingWindows = false
+  implicitWidth: showingWindows ? Math.min(360, anchor.window ? anchor.window.screen.width - 24 : 360) : 268
+  implicitHeight: (showingWindows ? windowList.implicitHeight : menuColumn.implicitHeight) + 20
   color: "transparent"
   grabFocus: true
 
@@ -70,6 +75,7 @@ PopupWindow {
 
     Column {
       id: menuColumn
+      visible: !root.showingWindows
       anchors.centerIn: parent
       width: parent.width - 20
       spacing: 2
@@ -127,12 +133,9 @@ PopupWindow {
 
       DockMenuAction {
         width: menuColumn.width
-        visible: root.remoteText.length > 0
-        text: root.remoteText
-        onTriggered: {
-          root.visible = false
-          root.activateElsewhere()
-        }
+        visible: root.windowCount > 0
+        text: "Ver ventanas (" + root.windowCount + ")…"
+        onTriggered: root.showingWindows = true
       }
 
       DockMenuAction {
@@ -143,6 +146,22 @@ PopupWindow {
           root.visible = false
           root.closeWindow()
         }
+      }
+    }
+
+    DockWindowList {
+      id: windowList
+      visible: root.showingWindows
+      anchors.centerIn: parent
+      width: parent.width - 20
+      height: implicitHeight
+      maximumHeight: Math.min(420, root.anchor.window ? root.anchor.window.screen.height - 60 : 420)
+      selection: root.windowSelection
+      applicationName: root.applicationName
+      onBackRequested: root.showingWindows = false
+      onWindowChosen: address => {
+        root.visible = false
+        root.windowChosen(address)
       }
     }
   }

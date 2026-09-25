@@ -56,3 +56,37 @@ function focusRequest(address, usingLua) {
   return usingLua ? 'hl.dsp.focus({ window = "' + selector + '" })'
     : "focuswindow " + selector
 }
+
+// Flat rows let the chooser scroll both groups together without nested popups.
+function windowRows(selection) {
+  var rows = []
+  var groups = [{label: "Este escritorio", windows: selection.local},
+                {label: "Otros escritorios", windows: selection.remote}]
+  var all = selection.local.concat(selection.remote).slice().sort(function(a, b) {
+    return String(a.address).localeCompare(String(b.address))
+  })
+  for (var g = 0; g < groups.length; ++g) {
+    var group = groups[g]
+    if (!group.windows.length) continue
+    rows.push({header: true, title: group.label + " · " + group.windows.length})
+    for (var i = 0; i < group.windows.length; ++i) {
+      var target = group.windows[i]
+      if (!target.window) continue
+      var number = all.indexOf(target) + 1
+      var workspace = target.workspaceId < 0 ? target.workspaceName
+        : "Escritorio " + target.workspaceName
+      rows.push({header: false, address: target.address,
+        title: String(target.window.title || "Ventana sin título"),
+        subtitle: "Ventana " + number + " · " + workspace,
+        active: target.window.activated === true})
+    }
+  }
+  return rows
+}
+
+function findWindow(selection, address) {
+  var windows = selection.local.concat(selection.remote)
+  for (var i = 0; i < windows.length; ++i)
+    if (windows[i].address === address && windows[i].window) return windows[i]
+  return null
+}

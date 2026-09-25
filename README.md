@@ -19,6 +19,7 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 - Workspace-aware clicks: focus the last-used local window or open a new one here
 - Running applications appear after favorites with a subtle separator; one icon per application
 - Pin running applications from their context menu
+- Window chooser grouped by current and other workspaces, with titles and keyboard navigation
 - Running-application indicators
 - Drag-to-reorder with persistent pinned-app order
 - Right-click actions to launch, close, pin, or unpin applications
@@ -237,7 +238,7 @@ Run `node tests/overlap.cjs` to check overlap detection for visible, hidden, pin
 
 Open windows from all workspaces appear after the pinned favorites. Multiple windows of the same recognized application share one temporary icon, which disappears after its last window closes. Pinned applications are never duplicated. Use **Fijar en el dock** on a temporary icon to keep it; unfixed running apps remain visible until closed. Only favorites can be reordered by dragging.
 
-Applications are matched by desktop entry ID, startup class and the existing web-app identifier matching. Unrecognized applications can still be focused and closed, but use a generic icon and cannot be pinned until a valid desktop launcher is available. Background processes without windows are not included. This change does not add a window chooser; clicking focuses the last-used local window.
+Applications are matched by desktop entry ID, startup class and the existing web-app identifier matching. Unrecognized applications can still be focused and closed, but use a generic icon and cannot be pinned until a valid desktop launcher is available. Background processes without windows are not included. Normal clicks focus the last-used local window; the context menu also offers a window chooser.
 
 Run `node tests/applications.cjs` to check grouping, matching, pin/unpin transitions and applications without launchers.
 
@@ -255,9 +256,10 @@ from another workspace implicitly:
 - A running app with no known new-window action opens the menu. This includes
   singleton apps such as Spotify and unverified launchers: ordinary execution can
   activate their existing window on another workspace, so it is not used here.
-- The menu offers **Nueva ventana aquí** when supported and **Ir a ventana ·
-  Escritorio N** for the most recently used window elsewhere. The latter is an
-  explicit workspace switch; a full window chooser is not included yet.
+- The menu offers **Nueva ventana aquí** when supported and **Ver ventanas (N)…**
+  to choose a specific window. The chooser groups **Este escritorio** first and
+  **Otros escritorios** second, with the window title and workspace on each row.
+  Selecting a remote row explicitly switches to that window's workspace.
 - **Cerrar ventana aquí** only closes the last-used local window.
 
 The new-window action is supplied by each application; application-specific
@@ -270,3 +272,23 @@ Validation: `node tests/window-policy.cjs`, `node tests/applications.cjs` and
 existing remote terminals, local focus history, Spotify without an implicit
 workspace switch, and two new windows each for Zen, Nautilus and VS Code on an
 empty workspace. Only test-created windows were closed afterward.
+
+### Choosing a window
+
+Right-click an application → **Ver ventanas (N)…**. The chooser stays inside the
+same lavender popup, with **Volver** to return to its menu. It lists all matched
+windows, including those of applications without a recognized desktop entry.
+Titles are rendered as plain text, wrap to two lines and update while open.
+Window numbers help distinguish identical titles and remain stable when focus
+history changes. A small dot identifies the currently active window.
+
+Long lists scroll within a bounded panel. Up/Down select a row, Enter activates
+it, and Escape or Backspace returns to the menu. Groups without windows are
+omitted; if the last window closes, the chooser shows an empty state. Activation
+revalidates the selected window address against the application's live windows,
+so it never falls back to a different window when the selected one has closed.
+Normal left clicks and the current-workspace launch policy are unchanged.
+
+Validation also includes `node tests/window-chooser.cjs` and a live QML check of
+exact window selection, remote workspace activation, 25-window scrolling bounds,
+an empty list and a visual check of the grouped layout and long titles.

@@ -58,7 +58,6 @@ Item {
     Hyprland.toplevels.values, currentWorkspace, focusedMonitor ? focusedMonitor.id : -1)
   readonly property var localTarget: windowSelection.local.length ? windowSelection.local[0] : null
   readonly property var localWindow: localTarget ? localTarget.window : null
-  readonly property var remoteWindow: windowSelection.remote.length ? windowSelection.remote[0] : null
   readonly property var launchPlan: WindowPolicy.launchPlan(entry, matchingWindows.length > 0)
   readonly property bool canLaunchHere: currentWorkspace !== 0 && launchPlan.kind !== "blocked"
   readonly property real dragOffset: dragHandler.active
@@ -256,11 +255,11 @@ Item {
     launchText: root.runningToplevel
       ? root.canLaunchHere ? "Nueva ventana aquí" : "Nueva ventana no disponible"
       : "Abrir aquí"
-    remoteText: root.remoteWindow ? "Ir a ventana · "
-      + (root.remoteWindow.workspaceId < 0 ? root.remoteWindow.workspaceName
-        : "Escritorio " + root.remoteWindow.workspaceName) : ""
+    windowSelection: root.windowSelection
+    applicationName: root.entry ? root.entry.name : root.runningApplication
+      ? root.runningApplication.appId || "Aplicación" : root.desktopId
     canClose: root.localWindow !== null
-    onActivateElsewhere: root.focusWindow(root.remoteWindow)
+    onWindowChosen: address => root.focusWindow(WindowPolicy.findWindow(root.windowSelection, address))
     autoHide: root.autoHide
     onVisibleChanged: root.contextMenuVisibilityChanged(visible)
     onOpenNewWindow: root.launch()
