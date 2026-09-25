@@ -17,6 +17,8 @@ A lightweight macOS-inspired application dock for Hyprland, built with Quickshel
 - Smooth pointer-distance magnification
 - Freedesktop application icons and launching
 - Focuses an existing application on another workspace
+- Running applications appear after favorites with a subtle separator; one icon per application
+- Pin running applications from their context menu
 - Running-application indicators
 - Drag-to-reorder with persistent pinned-app order
 - Right-click actions to launch, close, pin, or unpin applications
@@ -230,3 +232,11 @@ Set `autoHide: true` and `intelligentHide: true` to keep the dock visible unless
 ## Local checks
 
 Run `node tests/overlap.cjs` to check overlap detection for visible, hidden, pinned and special-workspace windows. The runtime and QML checks are listed in `AGENTS.md`.
+
+## Running applications
+
+Open windows from all workspaces appear after the pinned favorites. Multiple windows of the same recognized application share one temporary icon, which disappears after its last window closes. Pinned applications are never duplicated. Use **Fijar en el dock** on a temporary icon to keep it; unfixed running apps remain visible until closed. Only favorites can be reordered by dragging.
+
+Applications are matched by desktop entry ID, startup class and the existing web-app identifier matching. Unrecognized applications can still be focused and closed, but use a generic icon and cannot be pinned until a valid desktop launcher is available. Background processes without windows are not included. This change does not add a window chooser; clicking still focuses one window.
+
+Run `node tests/applications.cjs` to check grouping, matching, pin/unpin transitions and applications without launchers.

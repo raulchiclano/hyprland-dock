@@ -1,5 +1,6 @@
 import QtQuick
 import "DockStyle.js" as DockStyle
+import "Applications.js" as Applications
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -18,12 +19,15 @@ Item {
   required property bool autoHide
   required property string position
   required property bool vertical
+  property bool isPinned: true
+  property var runningApplication: null
   property real reorderOffset: 0
   signal dragStarted(int itemIndex)
   signal dragMoved(real mainPosition)
   signal dragFinished()
   signal addApplicationRequested()
   signal removeRequested(string desktopId)
+  signal pinRequested(string desktopId)
   signal autoHideToggled(bool enabled)
   signal contextMenuVisibilityChanged(bool visible)
 
@@ -32,11 +36,17 @@ Item {
   readonly property var applications: DesktopEntries.applications.values || []
   readonly property var entry: {
     var modelRevision = applications.length
-    return DesktopEntries.byId(desktopId)
+    return runningApplication ? runningApplication.entry : desktopId ? DesktopEntries.byId(desktopId) : null
   }
   readonly property var toplevels: ToplevelManager.toplevels.values || []
   readonly property var runningToplevel: {
     var modelRevision = toplevels.length
+    if (runningApplication) {
+      var windows = runningApplication.windows
+      for (var i = 0; i < windows.length; ++i)
+        if (windows[i]) return windows[i]
+      return null
+    }
     return findRunningToplevel()
   }
   readonly property real dragOffset: dragHandler.active
@@ -50,48 +60,9 @@ Item {
     : Math.exp(-(distance * distance) / (magnificationRadius * magnificationRadius))
   readonly property real iconScale: 1 + (magnification - 1) * influence
 
-  function normalizedId(value) {
-    return String(value || "").toLowerCase().replace(/\.desktop$/, "")
-  }
-
-  function webAppId() {
-    if (!entry || !entry.command) return ""
-
-    for (var i = 0; i < entry.command.length; ++i) {
-      var match = String(entry.command[i]).match(/https?:\/\/[^?#\s]+/i)
-      if (!match) continue
-
-      var url = match[0].replace(/^https?:\/\//i, "").replace(/\/$/, "")
-      try {
-        url = decodeURIComponent(url)
-      } catch (error) {
-        // Keep the encoded URL; it can still match the generated app ID.
-      }
-      return url.toLowerCase().replace(/[^a-z0-9]/g, "")
-    }
-    return ""
-  }
-
-  function matchesEntry(toplevel) {
-    if (!toplevel) return false
-    var appId = normalizedId(toplevel.appId)
-    if (!appId) return false
-
-    var ids = [desktopId]
-    if (entry) ids.push(entry.id, entry.startupClass)
-    for (var i = 0; i < ids.length; ++i) {
-      var id = normalizedId(ids[i])
-      if (id && appId === id) return true
-    }
-
-    var generatedWebAppId = webAppId()
-    return generatedWebAppId.length >= 6
-      && appId.replace(/[^a-z0-9]/g, "").indexOf(generatedWebAppId) >= 0
-  }
-
   function findRunningToplevel() {
     for (var i = 0; i < toplevels.length; ++i) {
-      if (matchesEntry(toplevels[i])) return toplevels[i]
+      if (Applications.score(toplevels[i], desktopId, entry)) return toplevels[i]
     }
     return null
   }
@@ -99,12 +70,12 @@ Item {
   function launch() {
     if (entry)
       entry.execute()
-    else
+    else if (isPinned && desktopId)
       Quickshell.execDetached(["gtk-launch", desktopId + ".desktop"])
   }
 
   function activateOrLaunch() {
-    if (clickAction === "focus-or-launch" && runningToplevel) {
+    if ((!isPinned || clickAction === "focus-or-launch") && runningToplevel) {
       runningToplevel.activate()
       return
     }
@@ -211,7 +182,9 @@ Item {
     Text {
       id: tooltipText
       anchors.centerIn: parent
-      text: root.entry ? root.entry.name : root.desktopId
+      text: root.entry ? root.entry.name : root.runningApplication
+        ? root.runningApplication.appId || (root.runningToplevel ? root.runningToplevel.title : "Aplicación")
+        : root.desktopId
       color: DockStyle.text
       font.family: DockStyle.fontFamily
       font.pixelSize: 13
@@ -236,6 +209,7 @@ Item {
 
   DragHandler {
     id: dragHandler
+    enabled: root.isPinned
 
     target: null
     acceptedButtons: Qt.LeftButton
@@ -254,11 +228,18 @@ Item {
     }
   }
 
+  Component.onDestruction: {
+    if (contextMenu.visible) root.contextMenuVisibilityChanged(false)
+  }
+
   DockContextMenu {
     id: contextMenu
 
     anchorItem: root
     position: root.position
+    isPinned: root.isPinned
+    canPin: root.entry !== null && !root.entry.noDisplay
+    canLaunch: root.entry !== null || (root.isPinned && root.desktopId.length > 0)
     canClose: root.runningToplevel !== null
     autoHide: root.autoHide
     onVisibleChanged: root.contextMenuVisibilityChanged(visible)
@@ -266,6 +247,7 @@ Item {
     onCloseWindow: root.closeRunning()
     onAddApplication: root.addApplicationRequested()
     onRemoveFromDock: root.removeRequested(root.desktopId)
+    onPinToDock: root.pinRequested(root.desktopId)
     onToggleAutoHide: root.autoHideToggled(!root.autoHide)
   }
 }

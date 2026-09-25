@@ -5,6 +5,8 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import "Overlap.js" as Overlap
+import "Applications.js" as Applications
+import "DockStyle.js" as DockStyle
 
 PanelWindow {
   id: root
@@ -57,6 +59,9 @@ PanelWindow {
   readonly property bool vertical: position === "left" || position === "right"
   readonly property bool fullLength: settings.fullLength === undefined ? false : settings.fullLength
   readonly property var pinned: settings.pinned || []
+  readonly property var applications: DesktopEntries.applications.values || []
+  readonly property var toplevels: ToplevelManager.toplevels.values || []
+  readonly property var runningApplications: Applications.unpinned(pinned, applications, toplevels)
   readonly property int itemSize: iconSize + 14
   readonly property int reservedSize: iconSize + 24 + edgeMargin
   readonly property int mainPadding: 10
@@ -208,8 +213,8 @@ PanelWindow {
 
       // Keep one spare cell so a settings reload cannot transiently reduce the
       // grid capacity before the repeater updates its delegates.
-      columns: root.vertical ? 1 : Math.max(1, root.pinned.length + 1)
-      rows: root.vertical ? Math.max(1, root.pinned.length + 1) : 1
+      columns: root.vertical ? 1 : Math.max(1, root.pinned.length + root.runningApplications.length + 2)
+      rows: root.vertical ? Math.max(1, root.pinned.length + root.runningApplications.length + 2) : 1
 
       Repeater {
         model: root.pinned
@@ -238,6 +243,47 @@ PanelWindow {
           onDragFinished: root.finishDrag()
           onAddApplicationRequested: appPicker.open()
           onRemoveRequested: desktopId => root.unpinRequested(desktopId)
+          onAutoHideToggled: enabled => root.autoHideRequested(enabled)
+          onContextMenuVisibilityChanged: visible => {
+            root.openMenuCount = Math.max(0, root.openMenuCount + (visible ? 1 : -1))
+          }
+        }
+      }
+
+      Item {
+        visible: root.pinned.length > 0 && root.runningApplications.length > 0
+        width: root.vertical ? root.itemSize + 6 : 14
+        height: root.vertical ? 14 : root.itemSize + 6
+        Rectangle {
+          anchors.centerIn: parent
+          width: root.vertical ? root.iconSize * 0.65 : 1
+          height: root.vertical ? 1 : root.iconSize * 0.65
+          color: DockStyle.accent
+          opacity: 0.28
+        }
+      }
+
+      Repeater {
+        model: root.runningApplications
+
+        DockItem {
+          required property var modelData
+          required property int index
+          desktopId: modelData.desktopId
+          runningApplication: modelData
+          isPinned: false
+          itemIndex: index
+          slotSize: root.itemSize
+          iconSize: root.iconSize
+          magnification: root.magnification
+          magnificationRadius: root.magnificationRadius
+          pointerPosition: root.pointerPosition
+          clickAction: root.clickAction
+          autoHide: root.autoHide
+          position: root.position
+          vertical: root.vertical
+          onPinRequested: desktopId => root.pinRequested(desktopId)
+          onAddApplicationRequested: appPicker.open()
           onAutoHideToggled: enabled => root.autoHideRequested(enabled)
           onContextMenuVisibilityChanged: visible => {
             root.openMenuCount = Math.max(0, root.openMenuCount + (visible ? 1 : -1))

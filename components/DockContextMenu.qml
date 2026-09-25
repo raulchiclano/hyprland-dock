@@ -9,6 +9,10 @@ PopupWindow {
   required property string position
   required property bool canClose
   required property bool autoHide
+  property bool isPinned: true
+  property bool canPin: true
+  property bool canLaunch: true
+  signal pinToDock()
   signal openNewWindow()
   signal closeWindow()
   signal addApplication()
@@ -78,10 +82,12 @@ PopupWindow {
 
       DockMenuAction {
         width: menuColumn.width
-        text: "Desfijar del dock"
+        text: root.isPinned ? "Desfijar del dock" : "Fijar en el dock"
+        enabled: root.isPinned || root.canPin
         onTriggered: {
           root.visible = false
-          root.removeFromDock()
+          if (root.isPinned) root.removeFromDock()
+          else root.pinToDock()
         }
       }
 
@@ -109,6 +115,7 @@ PopupWindow {
       DockMenuAction {
         width: menuColumn.width
         text: "Abrir aplicación"
+        enabled: root.canLaunch
         onTriggered: {
           root.visible = false
           root.openNewWindow()
